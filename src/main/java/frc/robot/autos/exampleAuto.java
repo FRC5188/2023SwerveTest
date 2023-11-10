@@ -1,6 +1,7 @@
 package frc.robot.autos;
 
 import frc.robot.Constants;
+import frc.robot.subsystems.Odometry;
 import frc.robot.subsystems.Swerve;
 
 import java.util.List;
@@ -18,7 +19,11 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class exampleAuto extends SequentialCommandGroup {
+
+
     public exampleAuto(Swerve s_Swerve){
+        Odometry _swerveOdometry = s_Swerve.getSwerveOdometry();
+
         TrajectoryConfig config =
             new TrajectoryConfig(
                     Constants.AutoConstants.kMaxSpeedMetersPerSecond,
@@ -44,7 +49,7 @@ public class exampleAuto extends SequentialCommandGroup {
         SwerveControllerCommand swerveControllerCommand =
             new SwerveControllerCommand(
                 exampleTrajectory,
-                s_Swerve::getPose,
+                _swerveOdometry::getPose,
                 Constants.Swerve.swerveKinematics,
                 new PIDController(Constants.AutoConstants.kPXController, 0, 0),
                 new PIDController(Constants.AutoConstants.kPYController, 0, 0),
@@ -54,7 +59,7 @@ public class exampleAuto extends SequentialCommandGroup {
 
 
         addCommands(
-            new InstantCommand(() -> s_Swerve.resetOdometry(exampleTrajectory.getInitialPose())),
+            new InstantCommand(() -> _swerveOdometry.reset(s_Swerve.getModulePositions(), exampleTrajectory.getInitialPose())),
             swerveControllerCommand
         );
     }
