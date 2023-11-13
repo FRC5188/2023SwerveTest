@@ -1,8 +1,8 @@
 package frc.robot.autos;
 
 import frc.robot.Constants;
-import frc.robot.subsystems.Odometry;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.odometry.Odometry;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class exampleAuto extends SequentialCommandGroup {
         SwerveControllerCommand swerveControllerCommand =
             new SwerveControllerCommand(
                 exampleTrajectory,
-                _swerveOdometry::getPose,
+                Odometry::getPose,
                 Constants.Swerve.swerveKinematics,
                 new PIDController(Constants.AutoConstants.kPXController, 0, 0),
                 new PIDController(Constants.AutoConstants.kPYController, 0, 0),
