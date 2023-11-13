@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import frc.robot.SwerveModule;
+import frc.robot.subsystems.odometry.Odometry;
 import frc.robot.Constants;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -27,7 +28,7 @@ public class Swerve extends SubsystemBase {
     public Swerve() {
         Odometry.zeroGyro(); // Not sure if this is needed to be run before we create the object thought it can't hurt. 
 
-        /* By pausing init for a second before setting module offsets, we avoid a bug with inverting motors.
+        /** By pausing init for a second before setting module offsets, we avoid a bug with inverting motors.
          * See https://github.com/Team364/BaseFalconSwerve/issues/8 for more info.
          */
         Timer.delay(1.0);
