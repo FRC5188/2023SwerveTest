@@ -24,7 +24,7 @@ public class DriveToApriltag extends SequentialCommandGroup {
         double verticalDistance = ((0 > angle) ? (-1) : (1))*(distance)*(Math.cos(angle));
         generatedTrajectory = Autonomous.buildLinearTrajectory(
             new Pose2d(
-                horizontialDistance,
+                horizontialDistance, // TODO: This might need to account for the initial pose of the robot as well. I'm not sure if this will mess up the odometry. 
                 verticalDistance,
                 new Rotation2d(angle)
             )
