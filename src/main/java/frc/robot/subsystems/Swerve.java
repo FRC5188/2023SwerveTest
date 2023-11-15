@@ -2,39 +2,48 @@ package frc.robot.subsystems;
 
 import frc.robot.SwerveModule;
 import frc.robot.subsystems.odometry.Odometry;
+import frc.robot.subsystems.vision.Vision;
 import frc.robot.Constants;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class Swerve extends SubsystemBase {
-    private final SwerveModule[] _swerveModules = new SwerveModule[] {
+    private static final SwerveModule[] _swerveModules = new SwerveModule[] {
         new SwerveModule(0, Constants.Swerve.Mod0.constants),
         new SwerveModule(1, Constants.Swerve.Mod1.constants),
         new SwerveModule(2, Constants.Swerve.Mod2.constants),
         new SwerveModule(3, Constants.Swerve.Mod3.constants)
     };
 
-    // This isn't final because we have to wait a second before setting module offsets avoiding bug with inverting motors. 
-    private Odometry _swerveOdometry;
+    // Makes the controller for rotational motion of the robot. 
+    private static final ProfiledPIDController thetaController = new ProfiledPIDController(
+        Constants.AutoConstants.kPThetaController, 0, 0, 
+        Constants.AutoConstants.kThetaControllerConstraints);
+    
+    // Some setup for the robot before we use the subsystem. 
+    static {
+        Timer.delay(1.0);
+        // Sets the module back to absolute before they are given to the odometry system so we're accurate. 
+        for (SwerveModule module : _swerveModules) {
+            module.resetToAbsolute();
+        }
+
+        thetaController.enableContinuousInput(-Math.PI, Math.PI); // Sets up the rotational controller for building commands. 
+    }
 
     public Swerve() {
-        Odometry.zeroGyro(); // Not sure if this is needed to be run before we create the object thought it can't hurt. 
-
-        /** By pausing init for a second before setting module offsets, we avoid a bug with inverting motors.
-         * See https://github.com/Team364/BaseFalconSwerve/issues/8 for more info.
-         */
-        Timer.delay(1.0);
-        resetModulesToAbsolute();
-
-        _swerveOdometry = new Odometry(getModulePositions());
+        Odometry.build(getModulePositions()); // We must build the depending systems. Since no pose is passed in we're assuming that we start at zero. 
     }
 
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -44,7 +53,7 @@ public class Swerve extends SubsystemBase {
                                     translation.getX(), 
                                     translation.getY(), 
                                     rotation, 
-                                    _swerveOdometry.getYaw()
+                                    Odometry.getYaw()
                                 )
                                 : new ChassisSpeeds(
                                     translation.getX(), 
@@ -58,8 +67,31 @@ public class Swerve extends SubsystemBase {
         }
     }    
 
-    /* Used by SwerveControllerCommand in Auto */
-    public void setModuleStates(SwerveModuleState[] desiredStates) {
+    public SwerveControllerCommand buildAutonomousSwerveCommnad(Trajectory trajectory)
+    {
+        return new SwerveControllerCommand(
+            trajectory, 
+            Odometry::getPose, 
+            Constants.Swerve.swerveKinematics,
+            new PIDController(Constants.AutoConstants.kPXController, 0, 0),
+            new PIDController(Constants.AutoConstants.kPYController, 0, 0), 
+            thetaController,
+            this::setModuleStates, 
+            this);
+    }
+
+    @Override
+    public void periodic(){
+        Odometry.update(getModulePositions());  
+
+        for(SwerveModule mod : _swerveModules){
+            SmartDashboard.putNumber("Module " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
+            SmartDashboard.putNumber("Module " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
+            SmartDashboard.putNumber("Module " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
+        }
+    }
+
+    private void setModuleStates(SwerveModuleState[] desiredStates) {
         SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
         
         for(SwerveModule mod : _swerveModules){
@@ -67,7 +99,7 @@ public class Swerve extends SubsystemBase {
         }
     }    
 
-    public SwerveModuleState[] getModuleStates(){
+    private SwerveModuleState[] getModuleStates(){
         SwerveModuleState[] states = new SwerveModuleState[4];
         for(SwerveModule mod : _swerveModules){
             states[mod.moduleNumber] = mod.getState();
@@ -81,24 +113,5 @@ public class Swerve extends SubsystemBase {
             positions[mod.moduleNumber] = mod.getPosition();
         }
         return positions;
-    }
-
-    public void resetModulesToAbsolute(){
-        for(SwerveModule mod : _swerveModules){
-            mod.resetToAbsolute();
-        }
-    }
-
-    public Odometry getSwerveOdometry(){return this._swerveOdometry; }
-
-    @Override
-    public void periodic(){
-        _swerveOdometry.update(getModulePositions());  
-
-        for(SwerveModule mod : _swerveModules){
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
-        }
     }
 }
