@@ -78,6 +78,7 @@ public abstract class Vision {
     {
         // If we can't load in the field map then automatically assume we aren't in field oriented mode. 
         Vision.build(!fieldLayout.isEmpty());
+        System.out.println("Vision built.");
     }
 
     public static void build(boolean isFieldOriented)
@@ -92,6 +93,7 @@ public abstract class Vision {
         }
         else // We're field-oriented and just use odometry to get the angle. 
         {
+            
             // Is that tag even on the field?
             Pose2d apriltagPose = fieldLayout.get().getTagPose(id).isPresent()
                     ? ( fieldLayout.get().getTagPose(id).get().toPose2d())

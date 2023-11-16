@@ -44,6 +44,7 @@ public class Swerve extends SubsystemBase {
 
     public Swerve() {
         Odometry.build(getModulePositions()); // We must build the depending systems. Since no pose is passed in we're assuming that we start at zero. 
+        Vision.build(false);
     }
 
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -88,6 +89,7 @@ public class Swerve extends SubsystemBase {
             SmartDashboard.putNumber("Module " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Module " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
             SmartDashboard.putNumber("Module " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
+            SmartDashboard.putNumber("Distance Apriltag", Vision.getDistanceToApriltag((short) 2, 1.0700));
         }
     }
 
