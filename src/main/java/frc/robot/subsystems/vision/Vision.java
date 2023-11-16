@@ -1,4 +1,5 @@
 package frc.robot.subsystems.vision;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -43,9 +44,9 @@ public abstract class Vision {
     private static final double CAMERA_YAW = Math.toRadians(-10.5);
 
     private static final Transform3d CAMERA_POSITION = new Transform3d(
-        new Translation3d(CAMERA_X_FROM_ROBOT_CENTER, CAMERA_Y_FROM_ROBOT_CENTER, CAMERA_Z_FROM_ROBOT_CENTER),
-        new Rotation3d(CAMERA_ROLL, CAMERA_PITCH, CAMERA_YAW));
-    
+            new Translation3d(CAMERA_X_FROM_ROBOT_CENTER, CAMERA_Y_FROM_ROBOT_CENTER, CAMERA_Z_FROM_ROBOT_CENTER),
+            new Rotation3d(CAMERA_ROLL, CAMERA_PITCH, CAMERA_YAW));
+
     private static final PhotonCamera camera = new PhotonCamera(CAMERA_NAME);
     private static boolean isFieldOriented = false;
     private static boolean hasTarget = false;
@@ -54,49 +55,47 @@ public abstract class Vision {
     static {
         try {
             fieldLayout = Optional.of(AprilTagFields.k2023ChargedUp.loadAprilTagLayoutField());
-        } 
-        catch (IOException exception) {
-            fieldLayout = Optional.empty(); // If we can't load the map we just set it to be null. 
+        } catch (IOException exception) {
+            fieldLayout = Optional.empty(); // If we can't load the map we just set it to be null.
             isFieldOriented = false; // Can't be field oreie
             Output.warning("Cannot Load Field. Vision Results Cannot Be Used.");
         }
     };
 
-    // If the field layout couldn't be loaded then we just set this to empty and move on. Else we set it up. This assure that 
-    // everything is working order meaning a null-check later in the program isn't needed since it's checked here. 
-    private static Optional<PhotonPoseEstimator> poseEstimator = (!fieldLayout.isEmpty()) ? 
-    (Optional.of(
-        new PhotonPoseEstimator(
-            fieldLayout.get(),
-            PoseStrategy.LOWEST_AMBIGUITY,
-            camera,
-            CAMERA_POSITION
-        ))) : 
-    (Optional.empty());
-    
-    public static void build()
-    {
-        // If we can't load in the field map then automatically assume we aren't in field oriented mode. 
+    // If the field layout couldn't be loaded then we just set this to empty and
+    // move on. Else we set it up. This assure that
+    // everything is working order meaning a null-check later in the program isn't
+    // needed since it's checked here.
+    private static Optional<PhotonPoseEstimator> poseEstimator = (!fieldLayout.isEmpty()) ? (Optional.of(
+            new PhotonPoseEstimator(
+                    fieldLayout.get(),
+                    PoseStrategy.LOWEST_AMBIGUITY,
+                    camera,
+                    CAMERA_POSITION)))
+            : (Optional.empty());
+
+    public static void build() {
+        // If we can't load in the field map then automatically assume we aren't in
+        // field oriented mode.
         Vision.build(!fieldLayout.isEmpty());
     }
 
-    public static void build(boolean isFieldOriented)
-    {
+    public static void build(boolean isFieldOriented) {
         Vision.isFieldOriented = isFieldOriented;
     }
 
     public static double getAngleToApriltag(short id) throws NullPointerException {
-        if(!isFieldOriented) // Then we know that we're not field-oriented. 
+        if (!isFieldOriented) // Then we know that we're not field-oriented.
         {
             return camera.getLatestResult().getBestTarget().getYaw();
-        }
-        else // We're field-oriented and just use odometry to get the angle. 
+        } else // We're field-oriented and just use odometry to get the angle.
         {
             // Is that tag even on the field?
             Pose2d apriltagPose = fieldLayout.get().getTagPose(id).isPresent()
-                    ? ( fieldLayout.get().getTagPose(id).get().toPose2d())
+                    ? (fieldLayout.get().getTagPose(id).get().toPose2d())
                     : null;
-            // If we can't find the tag then throw an exception that should be handled in the calling function. 
+            // If we can't find the tag then throw an exception that should be handled in
+            // the calling function.
             if (apriltagPose == null) {
                 Output.error("Tag Couldn't Be Located. Ensure Apriltag ID is correct. ");
                 throw new NullPointerException("Tag couldn't be found. Please ensure that ID for apriltag is correct.");
@@ -106,26 +105,26 @@ public abstract class Vision {
     }
 
     public static double getDistanceToApriltag(short id, double targetHeight) throws NullPointerException {
-        if(!isFieldOriented) // Then we know that we're not field-oriented. 
+        if (!isFieldOriented) // Then we know that we're not field-oriented.
         {
             return PhotonUtils.calculateDistanceToTargetMeters(
-                                CAMERA_Y_FROM_ROBOT_CENTER,
-                                targetHeight,
-                                Units.degreesToRadians(CAMERA_PITCH),
-                                Units.degreesToRadians(camera.getLatestResult().getBestTarget().getPitch()));
-        }
-        else // We're field-oriented and just use odometry to get the distance. 
+                    CAMERA_Z_FROM_ROBOT_CENTER,
+                    targetHeight,
+                    Units.degreesToRadians(CAMERA_PITCH),
+                    Units.degreesToRadians(camera.getLatestResult().getBestTarget().getPitch()));
+        } else // We're field-oriented and just use odometry to get the distance.
         {
             Pose2d apriltagPose = fieldLayout.get().getTagPose(id).isPresent()
-                    ? ( fieldLayout.get().getTagPose(id).get().toPose2d())
+                    ? (fieldLayout.get().getTagPose(id).get().toPose2d())
                     : null;
-                  // Null check to ensure that we aren't working with a null value.
+            // Null check to ensure that we aren't working with a null value.
             if (apriltagPose == null) {
                 Output.error("Tag couldn't be found. Please ensure that ID for apriltag is correct.");
                 throw new NullPointerException("Tag couldn't be found. Please ensure that ID for apriltag is correct.");
             }
             // Pretty sure this returns the distance betweeen the robot and the apriltag.
-            return Odometry.getPose().relativeTo(apriltagPose).getTranslation().getDistance(apriltagPose.getTranslation());
+            return Odometry.getPose().relativeTo(apriltagPose).getTranslation()
+                    .getDistance(apriltagPose.getTranslation());
         }
     }
 
@@ -134,7 +133,7 @@ public abstract class Vision {
         if (target != null) {
             hasTarget = true;
             Pose3d robotPose = PhotonUtils.estimateFieldToRobotAprilTag(target.getBestCameraToTarget(),
-                        fieldLayout.get().getTagPose(target.getFiducialId()).get(), CAMERA_POSITION);
+                    fieldLayout.get().getTagPose(target.getFiducialId()).get(), CAMERA_POSITION);
             poseEstimator.addVisionMeasurement(robotPose.toPose2d(), Timer.getFPGATimestamp());
             Output.print("Robot Pose Updated From Vision " + robotPose);
             return poseEstimator;
@@ -148,11 +147,10 @@ public abstract class Vision {
         try {
             PhotonTrackedTarget target = camera.getLatestResult().getBestTarget();
             Pose3d robotPose = PhotonUtils.estimateFieldToRobotAprilTag(target.getBestCameraToTarget(),
-                        fieldLayout.get().getTagPose(target.getFiducialId()).get(), CAMERA_POSITION);
+                    fieldLayout.get().getTagPose(target.getFiducialId()).get(), CAMERA_POSITION);
             return robotPose;
-        }
-            catch(Exception exception){
-                throw new NullPointerException("[ERROR] Please Start Robot Facing An Apriltag. Pose Cannot Be Determined.");
+        } catch (Exception exception) {
+            throw new NullPointerException("[ERROR] Please Start Robot Facing An Apriltag. Pose Cannot Be Determined.");
         }
     }
 
@@ -161,7 +159,7 @@ public abstract class Vision {
         return poseEstimator.get().update();
     }
 
-    public static boolean hasTarget(){
+    public static boolean hasTarget() {
         return hasTarget;
     }
 }
