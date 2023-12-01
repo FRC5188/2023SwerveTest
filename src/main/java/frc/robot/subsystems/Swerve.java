@@ -1,24 +1,26 @@
 package frc.robot.subsystems;
 
-import frc.robot.SwerveModule;
-import frc.robot.subsystems.odometry.Odometry;
-import frc.robot.subsystems.vision.Vision;
-import frc.robot.Constants;
-
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
+import frc.robot.Constants;
+import frc.robot.SwerveModule;
+import frc.robot.subsystems.odometry.Odometry;
+import frc.robot.subsystems.vision.Vision;
 
 public class Swerve extends SubsystemBase {
+    private Field2d _field = new Field2d();
+
     private static final SwerveModule[] _swerveModules = new SwerveModule[] {
         new SwerveModule(0, Constants.Swerve.Mod0.constants),
         new SwerveModule(1, Constants.Swerve.Mod1.constants),
@@ -44,7 +46,12 @@ public class Swerve extends SubsystemBase {
 
     public Swerve() {
         Odometry.build(getModulePositions()); // We must build the depending systems. Since no pose is passed in we're assuming that we start at zero. 
-        Vision.build(false);
+        Vision.build();
+    }
+
+    private Field2d getField()
+    {
+        return _field;
     }
 
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -88,9 +95,14 @@ public class Swerve extends SubsystemBase {
         for(SwerveModule mod : _swerveModules){
             SmartDashboard.putNumber("Module " + mod.moduleNumber + " Cancoder", mod.getCanCoder().getDegrees());
             SmartDashboard.putNumber("Module " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-            SmartDashboard.putNumber("Module " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
-            SmartDashboard.putNumber("Distance Apriltag", Vision.getDistanceToApriltag((short) 2, 1.0700));
+            SmartDashboard.putNumber("Module " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);
+            SmartDashboard.putNumber("Distance Apriltag", Vision.getDistanceToApriltag((short) 2, 1.26));
+            SmartDashboard.putString("Pose", Odometry.getPose().toString());
         }
+        SmartDashboard.putNumber("Gyroscope Angle", Odometry.getYaw().getDegrees());
+
+        _field.setRobotPose(Odometry.getPose());
+        SmartDashboard.putData("Field", _field);
     }
 
     private void setModuleStates(SwerveModuleState[] desiredStates) {
