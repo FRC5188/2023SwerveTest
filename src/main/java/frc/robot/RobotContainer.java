@@ -1,5 +1,8 @@
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
@@ -46,6 +49,12 @@ public class RobotContainer {
                 () -> robotCentric.getAsBoolean()
             )
         );
+
+        TalonFX elbowMotor = new TalonFX(14);
+        TalonFX shoulderMotor = new TalonFX(13);
+
+        elbowMotor.setNeutralMode(NeutralMode.Brake);
+        shoulderMotor.setNeutralMode(NeutralMode.Brake);
 
         // Configure the button bindings
         configureButtonBindings();
