@@ -1,6 +1,7 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2024.1.1-beta-4"
+    id "com.peterabeles.gversion" version "1.10" // Recommended additional plugin for Git information
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -21,6 +22,17 @@ repositories {
 
 configurations.all {
     exclude group: "edu.wpi.first.wpilibj"
+}
+
+// Creates the BuildConstants file that used to store information about the Git version of the project. 
+project.compileJava.dependsOn(createVersionFile)
+gversion {
+  srcDir       = "src/main/java/"
+  classPackage = "frc.robot"
+  className    = "BuildConstants"
+  dateFormat   = "yyyy-MM-dd HH:mm:ss z"
+  timeZone     = "America/New_York" // Use preferred time zone
+  indent       = "  "
 }
 
 task(checkAkitInstall, dependsOn: "classes", type: JavaExec) {
